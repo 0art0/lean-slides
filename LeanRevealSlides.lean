@@ -34,6 +34,37 @@ def runPandoc (mdFile : FilePath) : IO FilePath := do
   IO.println out
   return htmlFile
 
+section Widget
+
+structure HtmlRendererProps where
+  htmlContent : String
+deriving RpcEncodable
+
+@[widget_module]
+def HtmlRendererPanel : Component HtmlRendererProps where
+  javascript := "
+    import React from 'react';
+
+    const e = React.createElement
+
+    function HTMLRenderer(props) {
+        return e('div', { dangerouslySetInnerHTML: { __html: props.htmlContent } });
+      };
+
+    export default function HTMLRendererPanel(props) {
+      return (
+        e('details', { open: true },
+        e('summary', { className: 'mv2 pointer' }, 'Rendered HTML'),
+        HTMLRenderer(props))
+        );
+    };
+    "
+
+#html <HtmlRendererPanel htmlContent={"<h1>Hello, this is HTML content!</h1><p>It will be rendered using React.</p>"} />
+
+end Widget
+
+
 syntax (name := slides) "#slides" ident moduleDoc : command
 
 @[command_elab slides]
@@ -47,16 +78,11 @@ def revealSlides : CommandElab
       let slidesUrl := "file://" ++ (← IO.FS.realPath htmlFile).toString
       let slideContents ← IO.FS.readFile htmlFile
       IO.println slidesUrl
-      let slides := Html.ofTHtml <|
-        THtml.element "iframe" #[("src", slidesUrl),
-        ("width", "100%"), ("height", "600px"), ("frameborder", "0")] #[]
+      let slides := Html.ofTHtml <HtmlRendererPanel htmlContent={slideContents} />
       runTermElabM fun _ ↦ do 
         savePanelWidgetInfo stx ``HtmlDisplayPanel do
-          return (Json.mkObj [("html", .str slideContents)])
+          return json% { html : $(← rpcEncode slides) }
   | _ => throwUnsupportedSyntax
-
-
-#exit
 
 #slides test /-!
 # Test slides
