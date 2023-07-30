@@ -1,13 +1,13 @@
 import Lake
 open Lake DSL
 
-package «leanRevealSlides» {
+package «leanSlides» {
   precompileModules := true
 }
 
 @[default_target]
-lean_exe «leanRevealSlides» {
-  root := `«LeanRevealSlides»
+lean_exe «leanSlides» {
+  root := `«LeanSlides»
 }
 
 require proofwidgets from git "https://github.com/EdAyers/ProofWidgets4" @ "v0.0.13"
