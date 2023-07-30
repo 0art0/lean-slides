@@ -5,14 +5,13 @@ open Lean ProofWidgets Elab Parser Command Server System
 section Utils
 
 def launchHttpServer (port : Nat := 8080) : IO String := do
-  let out ← IO.Process.run {
+  let stdoutCfg ← IO.Process.spawn {
     cmd := "http-server",
     args := #["--port", toString port, 
               "--ext", "html"],
     cwd := some "."
-  } 
-  IO.println out
-  return s!"localhost:{port}"
+  }
+  return s!"http://localhost:{port}"
 
 def System.FilePath.getRelativePath (filePath : FilePath) : String :=
   if filePath.isRelative then
