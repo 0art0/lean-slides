@@ -1,4 +1,5 @@
 import ProofWidgets.Component.HtmlDisplay
+import Std.CodeAction.Misc
 
 open Lean ProofWidgets Elab Parser Command Server System
 
@@ -103,5 +104,29 @@ syntax (name := slidesCmd) "#slides" ("+draft")? ident moduleDoc : command
   | `(command| #slides +draft%$tk $_ $_) => 
     logInfoAt tk m!"Slides are not rendered in draft mode."
   | _ => throwUnsupportedSyntax
+
+open Std CodeAction in
+@[command_code_action slidesCmd]
+def draftSlidesCodeAction : CommandCodeAction := fun _ _ _ node ↦ do
+  let .node info _ := node | return #[]
+  let doc ← RequestM.readDoc
+  match info.stx with
+    | `(command| #slides +draft%$tk $_ $_) => 
+      let eager : Lsp.CodeAction := {
+        title := "Convert to live slides.",
+        kind? := "quickfix",
+        isPreferred? := true
+      }
+      return #[{
+        eager
+        lazy? := some do
+          let some startPos := tk.getPos? | return eager
+          let some endPos := tk.getTailPos? | return eager
+          return { eager with 
+            edit? := some <| .ofTextEdit doc.meta.uri {
+              range := doc.meta.text.utf8RangeToLspRange ⟨startPos, ⟨endPos.byteIdx + 1⟩⟩,
+              newText := "" } }
+      }]
+    | _ => return #[]
 
 end Widget
