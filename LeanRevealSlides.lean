@@ -94,7 +94,7 @@ def revealSlides : CommandElab
     let content := extractModuleDocContent doc
     let slidesPath ← getSlidesFor name content
     let slidesUrl := (← getServerUrl) ++ slidesPath.getRelativePath
-    IO.println s!"Rendering results for {name} ..."
+    IO.println s!"Rendering results for {name} hosted at {slidesUrl} ..."
     let slides := Html.ofTHtml <| iframeComponent slidesUrl
     runTermElabM fun _ ↦ do 
       savePanelWidgetInfo stx ``HtmlDisplayPanel <| do
