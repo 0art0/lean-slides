@@ -28,6 +28,8 @@ def slidesDir : FilePath := "." / "slides"
 
 def createMarkdownFile (title text : String) : IO FilePath := do
   let mdFile := markdownDir / (title ++ ".md")
+  unless ← markdownDir.pathExists do
+    IO.FS.createDir markdownDir
   IO.FS.writeFile mdFile text
   return mdFile
 
@@ -38,6 +40,8 @@ def runPandoc (mdFile : FilePath) : IO FilePath := do
     IO.throwServerError s!"The file {mdFile} is not in the `md` directory."
   
   let htmlFile : FilePath := slidesDir / (mdFile.fileStem.get! ++ ".html")
+  unless ← slidesDir.pathExists do
+    IO.FS.createDir slidesDir 
   let out ← IO.Process.run {
     cmd := "pandoc",
     args := #["-s", "--katex", 
