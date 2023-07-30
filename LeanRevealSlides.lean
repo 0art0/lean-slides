@@ -1,15 +1,31 @@
 import ProofWidgets.Component.HtmlDisplay
 
-open Lean ProofWidgets Elab Parser Command Server System Jsx Json
+open Lean ProofWidgets Elab Parser Command Server System
 
-set_option autoImplicit false
+section Utils
 
-def markdownDir : FilePath := "." / "md"
-def slidesDir : FilePath := "." / "slides"
+def launchHttpServer (port : Nat := 8080) : IO String := do
+  let out ← IO.Process.run {
+    cmd := "http-server",
+    args := #["--port", toString port, 
+              "--ext", "html"],
+    cwd := some "."
+  } 
+  IO.println out
+  return s!"localhost:{port}"
+
+def System.FilePath.getRelativePath (filePath : FilePath) : String :=
+  if filePath.isRelative then
+    filePath.normalize.toString.dropWhile (· ≠ FilePath.pathSeparator)
+  else 
+    panic! s!"The file path {filePath} is not a relative path."
 
 def extractModuleDocContent : TSyntax ``moduleDoc → String
   | ⟨.node _ _ #[_, .atom _ doc]⟩ => doc.dropRight 2
   | _ => panic! "Ill-formed module docstring."
+
+def markdownDir : FilePath := "." / "md"
+def slidesDir : FilePath := "." / "slides"
 
 def createMarkdownFile (title text : String) : IO FilePath := do
   let mdFile := markdownDir / (title ++ ".md")
@@ -34,62 +50,57 @@ def runPandoc (mdFile : FilePath) : IO FilePath := do
   IO.println out
   return htmlFile
 
+open scoped ProofWidgets.Jsx in
+def iframeComponent (url : String) :=
+  <iframe src={url} width="100%" height="500px" frameBorder="0" />
+
+end Utils
+
+section Caching
+
+initialize slidesCache : IO.Ref (HashMap (String × String) FilePath) ← IO.mkRef ∅
+initialize serverUrl : IO.Ref String ← IO.mkRef ""
+
+def getServerUrl : IO String := do
+  let ref ← serverUrl.get
+  if ref.isEmpty then
+    let url ← launchHttpServer
+    serverUrl.set url
+    return url
+  else 
+    return ref
+
+def getSlidesFor (title : String) (content : String) : IO FilePath := do
+  let ref ← slidesCache.get
+  match ref.find? (title, content) with
+    | some filePath => return filePath
+    | none => 
+      let mdFile ← createMarkdownFile title content
+      let htmlFile ← runPandoc mdFile
+      let ref' := ref.insert (title, content) htmlFile
+      slidesCache.set ref'
+      return htmlFile
+
+end Caching
+
 section Widget
-
-structure HtmlRendererProps where
-  htmlContent : String
-deriving RpcEncodable
-
-@[widget_module]
-def HtmlRendererPanel : Component HtmlRendererProps where
-  javascript := "
-    import React from 'react';
-
-    const e = React.createElement
-
-    function HTMLRenderer(props) {
-        return e('div', { dangerouslySetInnerHTML: { __html: props.htmlContent } });
-      };
-
-    export default function HTMLRendererPanel(props) {
-      return (
-        e('details', { open: true },
-        e('summary', { className: 'mv2 pointer' }, 'Rendered HTML'),
-        HTMLRenderer(props))
-        );
-    };
-    "
-
-#html <HtmlRendererPanel htmlContent={"<h1>Hello, this is HTML content!</h1><p>It will be rendered using React.</p>"} />
-
-end Widget
-
 
 syntax (name := slides) "#slides" ident moduleDoc : command
 
+open scoped Json in
 @[command_elab slides]
 def revealSlides : CommandElab
   | stx@`(command| #slides $title $doc) => do
-      let content := extractModuleDocContent doc
-      let name := title.getId.toString
-      let mdFile ← createMarkdownFile name content
-      let htmlFile ← runPandoc mdFile
-      IO.println s!"Rendering results for {name} ..."
-      let slidesUrl := "file://" ++ (← IO.FS.realPath htmlFile).toString
-      let slideContents ← IO.FS.readFile htmlFile
-      IO.println slidesUrl
-      let slides := Html.ofTHtml <HtmlRendererPanel htmlContent={slideContents} />
-      runTermElabM fun _ ↦ do 
-        savePanelWidgetInfo stx ``HtmlDisplayPanel do
-          return json% { html : $(← rpcEncode slides) }
+    let name := title.getId.toString
+    let content := extractModuleDocContent doc
+    let slidesPath ← getSlidesFor name content
+    let slidesUrl := (← getServerUrl) ++ slidesPath.getRelativePath
+    IO.println s!"Rendering results for {name} ..."
+    
+    let slides := Html.ofTHtml <| iframeComponent slidesUrl
+    runTermElabM fun _ ↦ do 
+      savePanelWidgetInfo stx ``HtmlDisplayPanel do
+        return json% { html : $(← rpcEncode slides) }
   | _ => throwUnsupportedSyntax
 
-#slides test /-!
-# Test slides
-
-$$\sum_{i = 0}^n i^2 = \infty$$
-
-# Last slide
-
-Done.
--/
+end Widget
