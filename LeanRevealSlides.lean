@@ -58,28 +58,31 @@ end Utils
 
 section Caching
 
-initialize slidesCache : IO.Ref (HashMap (String × String) FilePath) ← IO.mkRef ∅
-initialize serverUrl : IO.Ref String ← IO.mkRef ""
+-- initialize slidesCache : IO.Ref (HashMap (String × String) FilePath) ← IO.mkRef ∅
+-- initialize serverUrl : IO.Ref String ← IO.mkRef ""
 
 def getServerUrl : IO String := do
-  let ref ← serverUrl.get
-  if ref.isEmpty then
-    let url ← launchHttpServer
-    serverUrl.set url
-    return url
-  else 
-    return ref
+  -- let ref ← serverUrl.get
+  -- if ref.isEmpty then
+  --   let url ← launchHttpServer
+  --   serverUrl.set url
+  --   return url
+  -- else 
+  --   return ref
+  return "localhost:8080"
 
 def getSlidesFor (title : String) (content : String) : IO FilePath := do
-  let ref ← slidesCache.get
-  match ref.find? (title, content) with
-    | some filePath => return filePath
-    | none => 
-      let mdFile ← createMarkdownFile title content
-      let htmlFile ← runPandoc mdFile
-      let ref' := ref.insert (title, content) htmlFile
-      slidesCache.set ref'
-      return htmlFile
+  -- let ref ← slidesCache.get
+  -- match ref.find? (title, content) with
+  --   | some filePath => return filePath
+  --   | none => 
+  --     let mdFile ← createMarkdownFile title content
+  --     let htmlFile ← runPandoc mdFile
+  --     let ref' := ref.insert (title, content) htmlFile
+  --     slidesCache.set ref'
+  --     return htmlFile
+  let mdFile ← createMarkdownFile title content
+  runPandoc mdFile
 
 end Caching
 
@@ -96,7 +99,6 @@ def revealSlides : CommandElab
     let slidesPath ← getSlidesFor name content
     let slidesUrl := (← getServerUrl) ++ slidesPath.getRelativePath
     IO.println s!"Rendering results for {name} ..."
-    
     let slides := Html.ofTHtml <| iframeComponent slidesUrl
     runTermElabM fun _ ↦ do 
       savePanelWidgetInfo stx ``HtmlDisplayPanel do
