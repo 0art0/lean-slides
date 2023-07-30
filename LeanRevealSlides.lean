@@ -5,7 +5,7 @@ open Lean ProofWidgets Elab Parser Command Server System
 section Utils
 
 def launchHttpServer (port : Nat := 8080) : IO String := do
-  let stdoutCfg ← IO.Process.spawn {
+  let _stdoutCfg ← IO.Process.spawn {
     cmd := "http-server",
     args := #["--port", toString port, 
               "--ext", "html"],
@@ -83,10 +83,9 @@ end Caching
 
 section Widget
 
-syntax (name := slides) "#slides" ("draft")? ident moduleDoc : command
+syntax (name := slidesCmd) "#slides" ("+draft")? ident moduleDoc : command
 
-@[command_elab slides]
-def revealSlides : CommandElab
+@[command_elab slidesCmd] def revealSlides : CommandElab
   | stx@`(command| #slides $title $doc) => do
     let name := title.getId.toString
     let content := extractModuleDocContent doc
@@ -97,7 +96,7 @@ def revealSlides : CommandElab
     runTermElabM fun _ ↦ do 
       savePanelWidgetInfo stx ``HtmlDisplayPanel <| do
         return .mkObj [("html", ← rpcEncode slides)]
-  | `(command| #slides draft%$tk $_ $_) => 
+  | `(command| #slides +draft%$tk $_ $_) => 
     logInfoAt tk m!"Slides are not rendered in draft mode."
   | _ => throwUnsupportedSyntax
 
