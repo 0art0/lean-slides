@@ -5,13 +5,14 @@ open Lean ProofWidgets Elab Parser Command Server System
 section Utils
 
 def launchHttpServer (port : Nat := 8080) : IO String := do
-  let stdioCfg ← IO.Process.spawn {
+  let out ← IO.Process.run {
     cmd := "http-server",
     args := #["--port", toString port, 
               "--ext", "html"],
     cwd := some "."
-  }
-  return s!"http://localhost:{port}"
+  } 
+  IO.println out
+  return s!"localhost:{port}"
 
 def System.FilePath.getRelativePath (filePath : FilePath) : String :=
   if filePath.isRelative then
@@ -48,6 +49,10 @@ def runPandoc (mdFile : FilePath) : IO FilePath := do
   }
   IO.println out
   return htmlFile
+
+open scoped ProofWidgets.Jsx in
+def iframeComponent (url : String) :=
+  <iframe src={url} width="100%" height="500px" frameBorder="0" />
 
 end Utils
 
@@ -89,13 +94,11 @@ def revealSlides : CommandElab
     let name := title.getId.toString
     let content := extractModuleDocContent doc
     let slidesPath ← getSlidesFor name content
-    let slidesUrl := Syntax.mkStrLit <| (← getServerUrl) ++ slidesPath.getRelativePath
+    let slidesUrl := (← getServerUrl) ++ slidesPath.getRelativePath
     IO.println s!"Rendering results for {name} ..."
     
-    runTermElabM fun _ ↦ do
-      let slides ← evalHtml <| ← `(ProofWidgets.Html.ofTHtml <| 
-        THtml.element "iframe" #[("src", $slidesUrl:str),
-            ("width", "100%"), ("height", "600px"), ("frameborder", "0")] #[]) 
+    let slides := Html.ofTHtml <| iframeComponent slidesUrl
+    runTermElabM fun _ ↦ do 
       savePanelWidgetInfo stx ``HtmlDisplayPanel do
         return json% { html : $(← rpcEncode slides) }
   | _ => throwUnsupportedSyntax
