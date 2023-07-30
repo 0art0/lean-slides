@@ -87,7 +87,6 @@ section Widget
 
 syntax (name := slides) "#slides" ident moduleDoc : command
 
-open scoped Json in
 @[command_elab slides]
 def revealSlides : CommandElab
   | stx@`(command| #slides $title $doc) => do
@@ -96,11 +95,10 @@ def revealSlides : CommandElab
     let slidesPath ← getSlidesFor name content
     let slidesUrl := (← getServerUrl) ++ slidesPath.getRelativePath
     IO.println s!"Rendering results for {name} ..."
-    
     let slides := Html.ofTHtml <| iframeComponent slidesUrl
     runTermElabM fun _ ↦ do 
-      savePanelWidgetInfo stx ``HtmlDisplayPanel do
-        return json% { html : $(← rpcEncode slides) }
+      savePanelWidgetInfo stx ``HtmlDisplayPanel <| do
+        return .mkObj [("html", ← rpcEncode slides)]
   | _ => throwUnsupportedSyntax
 
 end Widget
