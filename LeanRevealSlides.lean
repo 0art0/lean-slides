@@ -5,8 +5,8 @@ open Lean ProofWidgets Elab Parser Command Server System
 
 section Utils
 
-def launchHttpServer (port : Nat := 8080) : IO String := do
-  let _stdoutCfg ← IO.Process.spawn {
+def launchHttpServer (port := 8080) : IO String := do
+  let _stdioCfg ← IO.Process.spawn {
     cmd := "http-server",
     args := #["--port", toString port, 
               "--ext", "html"],
@@ -66,13 +66,7 @@ initialize slidesCache : IO.Ref (HashMap (String × String) FilePath) ← IO.mkR
 initialize serverUrl : IO.Ref String ← IO.mkRef ""
 
 def getServerUrl : IO String := do
-  let ref ← serverUrl.get
-  if ref.isEmpty then
-    let url ← launchHttpServer
-    serverUrl.set url
-    return url
-  else 
-    return ref
+  return s!"http://localhost:{8080}"
 
 def getSlidesFor (title : String) (content : String) : IO FilePath := do
   let ref ← slidesCache.get
@@ -111,7 +105,7 @@ def draftSlidesCodeAction : CommandCodeAction := fun _ _ _ node ↦ do
   let .node info _ := node | return #[]
   let doc ← RequestM.readDoc
   match info.stx with
-    | `(command| #slides%$tk $_ $_) => 
+    | `(command| #slides%$tk $_:ident $_:moduleDoc) => 
       let eager : Lsp.CodeAction := {
         title := "Convert to draft slides.",
         kind? := "quickfix",
@@ -126,7 +120,7 @@ def draftSlidesCodeAction : CommandCodeAction := fun _ _ _ node ↦ do
               range := doc.meta.text.utf8RangeToLspRange ⟨pos, pos⟩,
               newText := " +draft" } }
       }]
-    | `(command| #slides +draft%$tk $_ $_) => 
+    | `(command| #slides +draft%$tk $_:ident $_:moduleDoc) => 
       let eager : Lsp.CodeAction := {
         title := "Convert to live slides.",
         kind? := "quickfix",
