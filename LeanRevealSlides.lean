@@ -76,15 +76,14 @@ def getSlidesFor (title : String) (content : String) : IO FilePath := do
     | none => 
       let mdFile ← createMarkdownFile title content
       let htmlFile ← runPandoc mdFile
-      let ref' := ref.insert (title, content) htmlFile
-      slidesCache.set ref'
+      slidesCache.set <| ref.insert (title, content) htmlFile
       return htmlFile
 
 end Caching
 
 section Widget
 
-syntax (name := slides) "#slides" ident moduleDoc : command
+syntax (name := slides) "#slides" ("draft")? ident moduleDoc : command
 
 @[command_elab slides]
 def revealSlides : CommandElab
@@ -98,6 +97,8 @@ def revealSlides : CommandElab
     runTermElabM fun _ ↦ do 
       savePanelWidgetInfo stx ``HtmlDisplayPanel <| do
         return .mkObj [("html", ← rpcEncode slides)]
+  | `(command| #slides draft%$tk $_ $_) => 
+    logInfoAt tk m!"Slides are not rendered in draft mode."
   | _ => throwUnsupportedSyntax
 
 end Widget
