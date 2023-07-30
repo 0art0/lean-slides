@@ -111,6 +111,21 @@ def draftSlidesCodeAction : CommandCodeAction := fun _ _ _ node ↦ do
   let .node info _ := node | return #[]
   let doc ← RequestM.readDoc
   match info.stx with
+    | `(command| #slides%$tk $_ $_) => 
+      let eager : Lsp.CodeAction := {
+        title := "Convert to draft slides.",
+        kind? := "quickfix",
+        isPreferred? := true
+      }
+      return #[{
+        eager
+        lazy? := some do
+          let some pos := tk.getTailPos? | return eager
+          return { eager with 
+            edit? := some <| .ofTextEdit doc.meta.uri {
+              range := doc.meta.text.utf8RangeToLspRange ⟨pos, pos⟩,
+              newText := " +draft" } }
+      }]
     | `(command| #slides +draft%$tk $_ $_) => 
       let eager : Lsp.CodeAction := {
         title := "Convert to live slides.",
