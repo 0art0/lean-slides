@@ -12,7 +12,7 @@ See `Demo.lean` for more details.
 
 `Lean Slides` works by combining together several tools:
 
-- [`reveal.js`](https://revealjs.com/)
+- [`reveal.js`](https://revealjs.com/) (no install required)
 
 - [`pandoc`](https://pandoc.org/)
 
