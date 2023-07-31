@@ -58,27 +58,13 @@ open scoped ProofWidgets.Jsx in
 def iframeComponent (url : String) :=
   <iframe src={url} width="100%" height="500px" frameBorder="0" />
 
-end Utils
-
-section Caching
-
-initialize slidesCache : IO.Ref (HashMap (String × String) FilePath) ← IO.mkRef ∅
-initialize serverUrl : IO.Ref String ← IO.mkRef ""
-
 def getServerUrl : IO String := do
   return s!"http://localhost:{8080}"
 
-def getSlidesFor (title : String) (content : String) : IO FilePath := do
-  let ref ← slidesCache.get
-  match ref.find? (title, content) with
-    | some filePath => return filePath
-    | none => 
-      let mdFile ← createMarkdownFile title content
-      let htmlFile ← runPandoc mdFile
-      slidesCache.set <| ref.insert (title, content) htmlFile
-      return htmlFile
+def getSlidesFor (title : String) (content : String) : IO FilePath :=
+  createMarkdownFile title content >>= runPandoc
 
-end Caching
+end Utils
 
 section Widget
 
