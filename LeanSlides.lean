@@ -15,6 +15,9 @@ def launchHttpServer (port := 8080) : IO String := do
   }
   return s!"http://localhost:{port}"
 
+def getServerUrl : IO String := do
+  return s!"http://localhost:{8080}"
+
 def System.FilePath.getRelativePath (filePath : FilePath) : String :=
   if filePath.isRelative then
     filePath.normalize.toString.dropWhile (· ≠ FilePath.pathSeparator)
@@ -64,10 +67,6 @@ end Utils
 section Caching
 
 initialize slidesCache : IO.Ref (HashMap (String × String) FilePath) ← IO.mkRef ∅
-initialize serverUrl : IO.Ref String ← IO.mkRef ""
-
-def getServerUrl : IO String := do
-  return s!"http://localhost:{8080}"
 
 def getSlidesFor (title : String) (content : String) : IO FilePath := do
   let ref ← slidesCache.get
