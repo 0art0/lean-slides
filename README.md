@@ -18,13 +18,15 @@ See `Demo.lean` for more details.
 
 - [`node.js`](https://nodejs.org/en)
 
-- [`http-server`](https://www.npmjs.com/package/http-server)
+- [`browser-sync`](https://browsersync.io/)
 
 # Usage
 
 To use `Lean Slides`, first install all the dependencies
 and clone [the repository](https://github.com/0art0/lean-slides/).
-Change to the root folder of the project and run `http-server`.
+
+Change to the root folder and build the repository.
+**Run the script `./build/bin/launchServer` from the command line.**
 
 ---
 
