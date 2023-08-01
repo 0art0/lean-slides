@@ -5,7 +5,7 @@ open Lean ProofWidgets Elab Parser Command Server System
 
 section Utils
 
-def port := 1948
+initialize portRef : IO.Ref Nat ← IO.mkRef 8080 
 
 def System.FilePath.getRelativePath (filePath : FilePath) : String :=
   if filePath.isRelative then
@@ -26,12 +26,19 @@ def createMarkdownFile (title text : String) : IO FilePath := do
   IO.FS.writeFile mdFile text
   return mdFile
 
-def runRevealMd (mdFile : FilePath) : IO Unit := do
+def getPort : IO Nat := do
+  let port ← portRef.get
+  portRef.set port.succ
+  return port
+
+def runRevealMd (mdFile : FilePath) : IO String := do
   unless (← mdFile.pathExists) && mdFile.extension = some "md" do
     IO.throwServerError s!"The file {mdFile} is not a valid Markdown file."
   unless mdFile.parent = some markdownDir do
     IO.throwServerError s!"The file {mdFile} is not in the `md` directory." 
-
+  
+  let port ← getPort
+  
   let _stdioCfg ← IO.Process.spawn {
     cmd := "reveal-md",
     args := #["--port", toString port,
@@ -39,9 +46,7 @@ def runRevealMd (mdFile : FilePath) : IO Unit := do
               "--disable-auto-open"]
     cwd := some "."
   }
-
-def getUrl (mdFile : FilePath) : String :=
-  s!"http://localhost:{port}/{mdFile.getRelativePath}"
+  return s!"http://localhost:{port}/{mdFile.getRelativePath}"
 
 open scoped ProofWidgets.Jsx in
 def iframeComponent (url : String) :=
@@ -58,8 +63,7 @@ syntax (name := slidesCmd) "#slides" ("+draft")? ident moduleDoc : command
     let name := title.getId.toString
     let content := extractModuleDocContent doc
     let mdFile ← createMarkdownFile name content
-    runRevealMd mdFile
-    let url := getUrl mdFile 
+    let url ← runRevealMd mdFile
     let slides := Html.ofTHtml <| iframeComponent url
     runTermElabM fun _ ↦ do 
       savePanelWidgetInfo stx ``HtmlDisplayPanel <| do
