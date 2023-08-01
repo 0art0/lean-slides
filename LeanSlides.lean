@@ -5,14 +5,7 @@ open Lean ProofWidgets Elab Parser Command Server System
 
 section Utils
 
-def launchHttpServer (port := 8080) : IO String := do
-  let _stdioCfg ← IO.Process.spawn {
-    cmd := "http-server",
-    args := #["--port", toString port, 
-              "--ext", "html"],
-    cwd := some "."
-  }
-  return s!"http://localhost:{port}"
+def port := 1948
 
 def System.FilePath.getRelativePath (filePath : FilePath) : String :=
   if filePath.isRelative then
@@ -25,7 +18,6 @@ def extractModuleDocContent : TSyntax ``moduleDoc → String
   | _ => panic! "Ill-formed module docstring."
 
 def markdownDir : FilePath := "." / "md"
-def slidesDir : FilePath := "." / "slides"
 
 def createMarkdownFile (title text : String) : IO FilePath := do
   let mdFile := markdownDir / (title ++ ".md")
@@ -34,51 +26,28 @@ def createMarkdownFile (title text : String) : IO FilePath := do
   IO.FS.writeFile mdFile text
   return mdFile
 
-def runPandoc (mdFile : FilePath) : IO FilePath := do
+def runRevealMd (mdFile : FilePath) : IO Unit := do
   unless (← mdFile.pathExists) && mdFile.extension = some "md" do
     IO.throwServerError s!"The file {mdFile} is not a valid Markdown file."
   unless mdFile.parent = some markdownDir do
-    IO.throwServerError s!"The file {mdFile} is not in the `md` directory."
-  
-  let htmlFile : FilePath := slidesDir / (mdFile.fileStem.get! ++ ".html")
-  unless ← slidesDir.pathExists do
-    IO.FS.createDir slidesDir 
-  let out ← IO.Process.run {
-    cmd := "pandoc",
-    args := #["-s", "--katex", 
-              "-t", "revealjs", 
-              mdFile.toString, 
-              "-o", htmlFile.toString],
+    IO.throwServerError s!"The file {mdFile} is not in the `md` directory." 
+
+  let _stdioCfg ← IO.Process.spawn {
+    cmd := "reveal-md",
+    args := #["--port", toString port,
+              mdFile.toString, "-w",
+              "--disable-auto-open"]
     cwd := some "."
   }
-  IO.println out
-  return htmlFile
+
+def getUrl (mdFile : FilePath) : String :=
+  s!"http://localhost:{port}/{mdFile.getRelativePath}"
 
 open scoped ProofWidgets.Jsx in
 def iframeComponent (url : String) :=
   <iframe src={url} width="100%" height="500px" frameBorder="0" />
 
 end Utils
-
-section Caching
-
-initialize slidesCache : IO.Ref (HashMap (String × String) FilePath) ← IO.mkRef ∅
-initialize serverUrl : IO.Ref String ← IO.mkRef ""
-
-def getServerUrl : IO String := do
-  return s!"http://localhost:{8080}"
-
-def getSlidesFor (title : String) (content : String) : IO FilePath := do
-  let ref ← slidesCache.get
-  match ref.find? (title, content) with
-    | some filePath => return filePath
-    | none => 
-      let mdFile ← createMarkdownFile title content
-      let htmlFile ← runPandoc mdFile
-      slidesCache.set <| ref.insert (title, content) htmlFile
-      return htmlFile
-
-end Caching
 
 section Widget
 
@@ -88,10 +57,10 @@ syntax (name := slidesCmd) "#slides" ("+draft")? ident moduleDoc : command
   | stx@`(command| #slides $title $doc) => do
     let name := title.getId.toString
     let content := extractModuleDocContent doc
-    let slidesPath ← getSlidesFor name content
-    let slidesUrl := (← getServerUrl) ++ slidesPath.getRelativePath
-    IO.println s!"Rendering results for {name} hosted at {slidesUrl} ..."
-    let slides := Html.ofTHtml <| iframeComponent slidesUrl
+    let mdFile ← createMarkdownFile name content
+    runRevealMd mdFile
+    let url := getUrl mdFile 
+    let slides := Html.ofTHtml <| iframeComponent url
     runTermElabM fun _ ↦ do 
       savePanelWidgetInfo stx ``HtmlDisplayPanel <| do
         return .mkObj [("html", ← rpcEncode slides)]
