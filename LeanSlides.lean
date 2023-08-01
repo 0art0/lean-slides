@@ -9,7 +9,8 @@ def launchHttpServer (port := 8080) : IO String := do
   let _stdioCfg ← IO.Process.spawn {
     cmd := "http-server",
     args := #["--port", toString port, 
-              "--ext", "html"],
+              "--ext", "html",
+              "--watch"],
     cwd := some "."
   }
   return s!"http://localhost:{port}"
