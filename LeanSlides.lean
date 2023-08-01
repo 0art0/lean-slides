@@ -1,22 +1,10 @@
+import LaunchServer
 import ProofWidgets.Component.HtmlDisplay
 import Std.CodeAction.Misc
 
 open Lean ProofWidgets Elab Parser Command Server System
 
 section Utils
-
-def launchHttpServer (port := 8080) : IO String := do
-  let _stdioCfg ← IO.Process.spawn {
-    cmd := "http-server",
-    args := #["--port", toString port, 
-              "--ext", "html",
-              "--watch"],
-    cwd := some "."
-  }
-  return s!"http://localhost:{port}"
-
-def getServerUrl : IO String := do
-  return s!"http://localhost:{8080}"
 
 def System.FilePath.getRelativePath (filePath : FilePath) : String :=
   if filePath.isRelative then
@@ -27,9 +15,6 @@ def System.FilePath.getRelativePath (filePath : FilePath) : String :=
 def extractModuleDocContent : TSyntax ``moduleDoc → String
   | ⟨.node _ _ #[_, .atom _ doc]⟩ => doc.dropRight 2
   | _ => panic! "Ill-formed module docstring."
-
-def markdownDir : FilePath := "." / "md"
-def slidesDir : FilePath := "." / "slides"
 
 def createMarkdownFile (title text : String) : IO FilePath := do
   let mdFile := markdownDir / (title ++ ".md")
@@ -42,7 +27,7 @@ def runPandoc (mdFile : FilePath) : IO FilePath := do
   unless (← mdFile.pathExists) && mdFile.extension = some "md" do
     IO.throwServerError s!"The file {mdFile} is not a valid Markdown file."
   unless mdFile.parent = some markdownDir do
-    IO.throwServerError s!"The file {mdFile} is not in the `md` directory."
+    IO.throwServerError s!"The file {mdFile} is not in the directory {markdownDir}."
   
   let htmlFile : FilePath := slidesDir / (mdFile.fileStem.get! ++ ".html")
   unless ← slidesDir.pathExists do
@@ -89,8 +74,10 @@ syntax (name := slidesCmd) "#slides" ("+draft")? ident moduleDoc : command
     let name := title.getId.toString
     let content := extractModuleDocContent doc
     let slidesPath ← getSlidesFor name content
-    let slidesUrl := (← getServerUrl) ++ slidesPath.getRelativePath
+    let slidesUrl := serverUrl  ++ slidesPath.getRelativePath
     IO.println s!"Rendering results for {name} hosted at {slidesUrl} ..."
+    -- TODO: Check whether the server is up programmatically
+    IO.println "Ensure that the `launchServer` script is running ..."
     let slides := Html.ofTHtml <| iframeComponent slidesUrl
     runTermElabM fun _ ↦ do 
       savePanelWidgetInfo stx ``HtmlDisplayPanel <| do
