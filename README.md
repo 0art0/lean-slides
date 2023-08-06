@@ -27,6 +27,10 @@ and clone [the repository](https://github.com/0art0/lean-slides/).
 
 Change to the root folder and build the repository.
 **Run the script `./build/bin/launchServer` from the command line.**
+Alternatively, run the following from the command-line:
+```bash
+browser-sync . --port 3000 --watch --no-open
+```
 
 ---
 
