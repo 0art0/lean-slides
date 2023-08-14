@@ -1,12 +1,12 @@
 import Lake
 open Lake DSL
 
-package leanSlides {
+package «lean-slides» {
   precompileModules := true
 }
 
 @[default_target]
-lean_exe leanSlides {
+lean_exe «lean-slides» {
   root := `LeanSlides
 }
 
@@ -16,25 +16,20 @@ require std from git "https://github.com/leanprover/std4/" @ "main"
 
 section Scripts
 
-def portFile : System.FilePath := "port"
-
-script get_port do
-  let port ← IO.FS.readFile portFile
-  IO.println port
-  return 0
-
-script set_port (args) do
-  let [port] := args | throw <| IO.userError "Expected exactly one argument."
-  IO.FS.writeFile portFile port
-  IO.println s!"The port for `LeanSlides` has been set to {port}."
-  return 0
+def getPort : IO String := do
+  let defaultPort := 3000
+  match ← IO.getEnv "LEANSLIDES_PORT" with
+  | some port => return port
+  | none => do
+    IO.println "Could not find `LEANSLIDES_PORT` variable in environment,\n
+                using default port {defaultPort} ..."
+    return toString defaultPort
 
 script serve_slides do
   IO.println "Starting HTTP server for `LeanSlides` ..."
-  let serverPort ← IO.FS.readFile portFile
   let _stdioCfg ← IO.Process.spawn {
     cmd := "browser-sync",
-    args := #[".", "--port", serverPort,
+    args := #[".", "--port", ← getPort,
               "--watch", "--no-open"],
     cwd := "."
   }
