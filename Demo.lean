@@ -44,7 +44,7 @@ Change to the root folder of the project and run `http-server`.
 
 ---
 
-In any file that imports `LeanSlides`, type
+In any file that imports `Lean Slides`, type
 
 ```lean
 #slides +draft Test /-!
