@@ -8,8 +8,18 @@ section Utils
 def markdownDir : System.FilePath := "." / "md"
 def slidesDir : System.FilePath := "." / "slides"
 
-def serverPort : IO String := IO.FS.readFile "port" 
-def serverUrl : IO String := do return s!"http://localhost:{← serverPort}"
+def getServerPort : IO String := do
+  match ← IO.getEnv "LEANSLIDES_PORT" with
+  | some port => return port
+  | none => return "3000"
+
+def getServerUrl : IO String := do
+  let url := s!"http://localhost:{← getServerPort}"
+  let out ← IO.Process.output { cmd := "curl", args := #[url] }
+  if out.exitCode != 0 then
+    IO.eprintln "The server for `LeanSlides` is not running.\n
+                 It can be started using the command `lake run lean-slides/serve_slides`."
+  return url
 
 def System.FilePath.getRelativePath (filePath : FilePath) : String :=
   if filePath.isRelative then
@@ -79,7 +89,7 @@ syntax (name := slidesCmd) "#slides" ("+draft")? ident moduleDoc : command
     let name := title.getId.toString
     let content := extractModuleDocContent doc
     let slidesPath ← getSlidesFor name content
-    let slidesUrl := (← serverUrl)  ++ slidesPath.getRelativePath
+    let slidesUrl := (← getServerUrl)  ++ slidesPath.getRelativePath
     IO.println s!"Rendering results for {name} hosted at {slidesUrl} ..."
     -- TODO: Check whether the server is up programmatically
     IO.println "Ensure that the `launchServer` script is running ..."
