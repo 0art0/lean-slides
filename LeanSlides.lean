@@ -92,7 +92,7 @@ syntax (name := slidesCmd) "#slides" ("+draft")? ident moduleDoc : command
     let slidesUrl := (← getServerUrl)  ++ slidesPath.getRelativePath
     IO.println s!"Rendering results for {name} hosted at {slidesUrl} ..."
     -- TODO: Check whether the server is up programmatically
-    IO.println "Ensure that the `launchServer` script is running ..."
+    IO.println "Ensure that the server is running ..."
     let slides := Html.ofTHtml <| iframeComponent slidesUrl
     runTermElabM fun _ ↦ do 
       savePanelWidgetInfo stx ``HtmlDisplayPanel <| do
