@@ -40,8 +40,8 @@ In any file that imports `LeanSlides`, type
 -/
 ```
 
-** Run `lake run lean-slides/serve-slides` from the command line
-to start the HTTP server for the slides. **
+**Run `lake run lean-slides/serve-slides` from the command line
+to start the HTTP server for the slides.**
 
 Any slides that are not in draft mode should now be rendered.
 
