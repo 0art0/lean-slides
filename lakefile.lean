@@ -25,7 +25,7 @@ def getPort : IO String := do
     IO.println "Using default port {defaultPort} instead ..."
     return toString defaultPort
 
-script serve_slides do
+script «serve-slides» do
   IO.println "Starting HTTP server for `Lean Slides` ..."
   let _stdioCfg ← IO.Process.spawn {
     cmd := "browser-sync",
