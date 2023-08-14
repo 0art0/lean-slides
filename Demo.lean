@@ -39,8 +39,10 @@ example : 1 = 1 := by
 # Usage
 
 To use `Lean Slides`, first install all the dependencies
-and clone [the repository](https://github.com/0art0/lean-slides/).
-Change to the root folder of the project and run `http-server`.
+and start the HTTP server with the command
+```lean
+lake run lean-slides/serve-slides
+```
 
 ---
 
