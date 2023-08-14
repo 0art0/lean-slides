@@ -21,8 +21,8 @@ def getPort : IO String := do
   match ← IO.getEnv "LEANSLIDES_PORT" with
   | some port => return port
   | none => do
-    IO.println "Could not find `LEANSLIDES_PORT` variable in environment,\n
-                using default port {defaultPort} ..."
+    IO.println "Could not find `LEANSLIDES_PORT` variable in environment"
+    IO.println "Using default port {defaultPort} instead ..."
     return toString defaultPort
 
 script serve_slides do
