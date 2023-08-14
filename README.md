@@ -22,14 +22,12 @@ See `Demo.lean` for more details.
 
 # Usage
 
-To use `Lean Slides`, first install all the dependencies
-and clone [the repository](https://github.com/0art0/lean-slides/).
+To use `Lean Slides`, first install all the dependencies listed above.
 
-Change to the root folder and build the repository.
-**Run the script `./build/bin/launchServer` from the command line.**
-Alternatively, run the following from the command-line:
-```bash
-browser-sync . --port 3000 --watch --no-open
+`Lean Slides` can be added to an existing Lean repository
+by inserting the following line in the `lakefile`:
+```lean
+require «lean-slides» from git "https://github.com/0art0/lean-slides"@"master"
 ```
 
 ---
@@ -41,6 +39,14 @@ In any file that imports `LeanSlides`, type
   <Markdown text>
 -/
 ```
+
+** Run `lake run lean-slides/serve-slides` from the command line
+to start the HTTP server for the slides. **
+
+Any slides that are not in draft mode should now be rendered.
+
+The port used by `Lean Slides` can be modified through
+an environment variable with the name `LEANSLIDES_PORT`.
 
 # Features
 
