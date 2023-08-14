@@ -1,10 +1,15 @@
-import LaunchServer
 import ProofWidgets.Component.HtmlDisplay
 import Std.CodeAction.Misc
 
 open Lean ProofWidgets Elab Parser Command Server System
 
 section Utils
+
+def markdownDir : System.FilePath := "." / "md"
+def slidesDir : System.FilePath := "." / "slides"
+
+def serverPort : IO String := IO.FS.readFile "port" 
+def serverUrl : IO String := do return s!"http://localhost:{← serverPort}"
 
 def System.FilePath.getRelativePath (filePath : FilePath) : String :=
   if filePath.isRelative then
@@ -74,7 +79,7 @@ syntax (name := slidesCmd) "#slides" ("+draft")? ident moduleDoc : command
     let name := title.getId.toString
     let content := extractModuleDocContent doc
     let slidesPath ← getSlidesFor name content
-    let slidesUrl := serverUrl  ++ slidesPath.getRelativePath
+    let slidesUrl := (← serverUrl)  ++ slidesPath.getRelativePath
     IO.println s!"Rendering results for {name} hosted at {slidesUrl} ..."
     -- TODO: Check whether the server is up programmatically
     IO.println "Ensure that the `launchServer` script is running ..."
