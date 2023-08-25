@@ -1,5 +1,6 @@
 import ProofWidgets.Component.HtmlDisplay
 import Std.CodeAction.Misc
+import LeanSlides.Init
 
 open Lean ProofWidgets Elab Parser Command Server System
 
@@ -50,8 +51,9 @@ def runPandoc (mdFile : FilePath) : IO FilePath := do
   let out ← IO.Process.run {
     cmd := "pandoc",
     args := #["-s", "--katex", 
-              "-t", "revealjs", 
-              mdFile.toString, 
+              "-t", "revealjs"] ++ 
+            (← LeanSlides.pandocOptions.get) ++ 
+            #[ mdFile.toString, 
               "-o", htmlFile.toString],
     cwd := some "."
   }
