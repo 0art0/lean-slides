@@ -14,11 +14,18 @@ See `Demo.lean` for more details.
 
 - [`reveal.js`](https://revealjs.com/) (no install required)
 
-- [`pandoc`](https://pandoc.org/)
+- [`pandoc`](https://pandoc.org/) (commit >= `7c6dbd3`)
 
 - [`node.js`](https://nodejs.org/en)
 
 - [`browser-sync`](https://browsersync.io/)
+
+Note that `LeanSlides` may have issues with older versions of `pandoc`.
+A manual intervention using
+```lean
+#set_pandoc_options "-V" "revealjs-url=\"https://unpkg.com/reveal.js@^4/\""
+```
+may fix the issues in such cases.
 
 # Usage
 
