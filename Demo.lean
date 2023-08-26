@@ -75,3 +75,11 @@ render mathematics by default
 using $\KaTeX$.
 
 -/
+
+#set_pandoc_options "-V" "theme=white"
+
+#slides Options /-!
+# A test for pandoc options. 
+
+This should use the white theme.
+-/

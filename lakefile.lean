@@ -6,6 +6,9 @@ package «lean-slides» {
 }
 
 @[default_target]
+lean_lib LeanSlides where
+
+@[default_target]
 lean_exe «lean-slides» {
   root := `LeanSlides
 }
