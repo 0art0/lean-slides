@@ -25,7 +25,7 @@ def getServerUrl : IO String := do
 def System.FilePath.getRelativePath (filePath : FilePath) : String :=
   if filePath.isRelative then
     filePath.normalize.toString.dropWhile (· ≠ FilePath.pathSeparator)
-  else 
+  else
     panic! s!"The file path {filePath} is not a relative path."
 
 def extractModuleDocContent : TSyntax ``moduleDoc → String
@@ -44,16 +44,16 @@ def runPandoc (mdFile : FilePath) : IO FilePath := do
     IO.throwServerError s!"The file {mdFile} is not a valid Markdown file."
   unless mdFile.parent = some markdownDir do
     IO.throwServerError s!"The file {mdFile} is not in the directory {markdownDir}."
-  
+
   let htmlFile : FilePath := slidesDir / (mdFile.fileStem.get! ++ ".html")
   unless ← slidesDir.pathExists do
-    IO.FS.createDir slidesDir 
+    IO.FS.createDir slidesDir
   let out ← IO.Process.run {
     cmd := "pandoc",
-    args := #["-s", "--katex", 
-              "-t", "revealjs"] ++ 
-            (← LeanSlides.pandocOptions.get) ++ 
-            #[ mdFile.toString, 
+    args := #["-s", "--katex",
+              "-t", "revealjs"] ++
+            (← LeanSlides.pandocOptions.get) ++
+            #[ mdFile.toString,
               "-o", htmlFile.toString],
     cwd := some "."
   }
@@ -74,7 +74,7 @@ def getSlidesFor (title : String) (content : String) : IO FilePath := do
   let ref ← slidesCache.get
   match ref.find? (title, content) with
     | some filePath => return filePath
-    | none => 
+    | none =>
       let mdFile ← createMarkdownFile title content
       let htmlFile ← runPandoc mdFile
       slidesCache.set <| ref.insert (title, content) htmlFile
@@ -95,11 +95,12 @@ syntax (name := slidesCmd) "#slides" ("+draft")? ident moduleDoc : command
     IO.println s!"Rendering results for {name} hosted at {slidesUrl} ..."
     -- TODO: Check whether the server is up programmatically
     IO.println "Ensure that the server is running ..."
-    let slides := Html.ofTHtml <| iframeComponent slidesUrl
-    runTermElabM fun _ ↦ do 
-      savePanelWidgetInfo stx ``HtmlDisplayPanel <| do
-        return .mkObj [("html", ← rpcEncode slides)]
-  | `(command| #slides +draft%$tk $_ $_) => 
+    let slides := iframeComponent slidesUrl
+    runTermElabM fun _ ↦ do
+      Widget.savePanelWidgetInfo (hash HtmlDisplayPanel.javascript) (do
+        return .mkObj [("html", ← rpcEncode slides)])
+        stx
+  | `(command| #slides +draft%$tk $_ $_) =>
     logInfoAt tk m!"Slides are not rendered in draft mode."
   | _ => throwUnsupportedSyntax
 
@@ -109,7 +110,7 @@ def draftSlidesCodeAction : CommandCodeAction := fun _ _ _ node ↦ do
   let .node info _ := node | return #[]
   let doc ← RequestM.readDoc
   match info.stx with
-    | `(command| #slides%$tk $_:ident $_:moduleDoc) => 
+    | `(command| #slides%$tk $_:ident $_:moduleDoc) =>
       let eager : Lsp.CodeAction := {
         title := "Convert to draft slides.",
         kind? := "quickfix",
@@ -119,12 +120,12 @@ def draftSlidesCodeAction : CommandCodeAction := fun _ _ _ node ↦ do
         eager
         lazy? := some do
           let some pos := tk.getTailPos? | return eager
-          return { eager with 
-            edit? := some <| .ofTextEdit doc.meta.uri {
+          return { eager with
+            edit? := some <| .ofTextEdit ⟨doc.meta.uri, none⟩ {
               range := doc.meta.text.utf8RangeToLspRange ⟨pos, pos⟩,
               newText := " +draft" } }
       }]
-    | `(command| #slides +draft%$tk $_:ident $_:moduleDoc) => 
+    | `(command| #slides +draft%$tk $_:ident $_:moduleDoc) =>
       let eager : Lsp.CodeAction := {
         title := "Convert to live slides.",
         kind? := "quickfix",
@@ -135,8 +136,8 @@ def draftSlidesCodeAction : CommandCodeAction := fun _ _ _ node ↦ do
         lazy? := some do
           let some startPos := tk.getPos? | return eager
           let some endPos := tk.getTailPos? | return eager
-          return { eager with 
-            edit? := some <| .ofTextEdit doc.meta.uri {
+          return { eager with
+            edit? := some <| .ofTextEdit ⟨doc.meta.uri, none⟩ {
               range := doc.meta.text.utf8RangeToLspRange ⟨startPos, ⟨endPos.byteIdx + 1⟩⟩,
               newText := "" } }
       }]
