@@ -28,11 +28,15 @@ def getPort : IO String := do
     IO.println s!"Using default port {defaultPort} instead ..."
     return toString defaultPort
 
+def slidesDir : System.FilePath := "." / "slides"
+
 script «serve-slides» do
   IO.println "Starting HTTP server for `Lean Slides` ..."
+  unless (← slidesDir.pathExists) do
+    IO.FS.createDir slidesDir
   let _stdioCfg ← IO.Process.spawn {
     cmd := "browser-sync",
-    args := #[".", "--port", ← getPort,
+    args := #[slidesDir.toString, "--port", ← getPort,
               "--watch", "--no-open"],
     cwd := "."
   }

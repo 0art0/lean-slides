@@ -7,7 +7,7 @@ open Lean ProofWidgets Elab Parser Command Server System
 section Utils
 
 def markdownDir : System.FilePath := "." / "md"
-def slidesDir : System.FilePath := "." / "slides"
+def slidesDir : System.FilePath := "." / "slides" -- this must be in sync with the `slidesDir` in the `lakefile`
 
 def getServerPort : IO String := do
   match ← IO.getEnv "LEANSLIDES_PORT" with
@@ -15,7 +15,7 @@ def getServerPort : IO String := do
   | none => return "3000"
 
 def getServerUrl : IO String := do
-  let url := s!"http://localhost:{← getServerPort}"
+  let url := s!"http://localhost:{← getServerPort}/"
   let out ← IO.Process.output { cmd := "curl", args := #[url] }
   if out.exitCode != 0 then
     IO.eprintln "The server for `Lean Slides` is not running."
@@ -70,15 +70,14 @@ section Caching
 
 initialize slidesCache : IO.Ref (HashMap (String × String) FilePath) ← IO.mkRef ∅
 
-def getSlidesFor (title : String) (content : String) : IO FilePath := do
+def createSlidesFor (title : String) (content : String) : IO Unit := do
   let ref ← slidesCache.get
   match ref.find? (title, content) with
-    | some filePath => return filePath
+    | some _ => pure ()
     | none =>
       let mdFile ← createMarkdownFile title content
       let htmlFile ← runPandoc mdFile
       slidesCache.set <| ref.insert (title, content) htmlFile
-      return htmlFile
 
 end Caching
 
@@ -90,8 +89,8 @@ syntax (name := slidesCmd) "#slides" ("+draft")? ident moduleDoc : command
   | stx@`(command| #slides $title $doc) => do
     let name := title.getId.toString
     let content := extractModuleDocContent doc
-    let slidesPath ← getSlidesFor name content
-    let slidesUrl := (← getServerUrl)  ++ slidesPath.getRelativePath
+    createSlidesFor name content
+    let slidesUrl := (← getServerUrl)  ++ s!"{name}.html"
     IO.println s!"Rendering results for {name} hosted at {slidesUrl} ..."
     -- TODO: Check whether the server is up programmatically
     IO.println "Ensure that the server is running ..."
