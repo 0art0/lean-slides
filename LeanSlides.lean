@@ -1,5 +1,5 @@
 import ProofWidgets.Component.HtmlDisplay
-import Std.CodeAction.Misc
+import Batteries.CodeAction.Misc
 import LeanSlides.Init
 
 open Lean ProofWidgets Elab Parser Command Server System
