@@ -68,11 +68,11 @@ end Utils
 
 section Caching
 
-initialize slidesCache : IO.Ref (HashMap (String × String) FilePath) ← IO.mkRef ∅
+initialize slidesCache : IO.Ref (Std.HashMap (String × String) FilePath) ← IO.mkRef ∅
 
 def createSlidesFor (title : String) (content : String) : IO Unit := do
   let ref ← slidesCache.get
-  match ref.find? (title, content) with
+  match ref[(title, content)]? with
     | some _ => pure ()
     | none =>
       let mdFile ← createMarkdownFile title content
