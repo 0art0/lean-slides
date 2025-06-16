@@ -38,8 +38,7 @@ script «serve-slides» do
   let _stdioCfg ← IO.Process.spawn {
     cmd := "browser-sync",
     args := #[slidesDir.toString, "--port", ← getPort,
-              "--watch", "--no-open"],
-    cwd := "."
+              "--watch", "--no-open"]
   }
   return 0
 
