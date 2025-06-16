@@ -16,10 +16,12 @@ def getServerPort : IO String := do
 
 def getServerUrl : IO String := do
   let url := s!"http://localhost:{← getServerPort}/"
-  let out ← IO.Process.output { cmd := "curl", args := #[url] }
-  if out.exitCode != 0 then
-    IO.eprintln "The server for `Lean Slides` is not running."
-    IO.eprintln "It can be started using the command `lake run lean-slides/serve-slides`."
+  try
+    let out ← IO.Process.output { cmd := "curl", args := #[url] }
+    if out.exitCode != 0 then
+      IO.eprintln "The server for `Lean Slides` is not running."
+      IO.eprintln "It can be started using the command `lake run lean-slides/serve-slides`."
+  catch err => IO.eprintln err
   return url
 
 def System.FilePath.getRelativePath (filePath : FilePath) : String :=

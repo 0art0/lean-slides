@@ -27,10 +27,12 @@ def getPort : IO String := do
     IO.println s!"Using default port {defaultPort} instead ..."
     return toString defaultPort
 
-def slidesDir : System.FilePath := "." / "slides"
+def slidesDir : IO System.FilePath :=
+  return (← IO.currentDir) / "slides" |>.normalize
 
 script «serve-slides» do
   IO.println "Starting HTTP server for `Lean Slides` ..."
+  let slidesDir ← slidesDir
   unless (← slidesDir.pathExists) do
     IO.FS.createDir slidesDir
   let _stdioCfg ← IO.Process.spawn {
