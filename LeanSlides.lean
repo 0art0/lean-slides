@@ -6,8 +6,8 @@ open Lean ProofWidgets Elab Parser Command Server System
 
 section Utils
 
-def markdownDir : System.FilePath := "." / "md"
-def slidesDir : System.FilePath := "." / "slides" -- this must be in sync with the `slidesDir` in the `lakefile`
+def markdownDir : IO System.FilePath := return ((← IO.currentDir) / "md").normalize
+def slidesDir : IO System.FilePath := return ((← IO.currentDir) / "slides").normalize -- this must be in sync with the `slidesDir` in the `lakefile`
 
 def getServerPort : IO String := do
   match ← IO.getEnv "LEANSLIDES_PORT" with
@@ -35,6 +35,7 @@ def extractModuleDocContent : TSyntax ``moduleDoc → String
   | _ => panic! "Ill-formed module docstring."
 
 def createMarkdownFile (title text : String) : IO FilePath := do
+  let markdownDir ← markdownDir
   let mdFile := markdownDir / (title ++ ".md")
   unless ← markdownDir.pathExists do
     IO.FS.createDir markdownDir
@@ -42,6 +43,9 @@ def createMarkdownFile (title text : String) : IO FilePath := do
   return mdFile
 
 def runPandoc (mdFile : FilePath) : IO FilePath := do
+  let markdownDir ← markdownDir
+  let slidesDir ← slidesDir
+
   unless (← mdFile.pathExists) && mdFile.extension = some "md" do
     IO.throwServerError s!"The file {mdFile} is not a valid Markdown file."
   unless mdFile.parent = some markdownDir do
@@ -56,8 +60,7 @@ def runPandoc (mdFile : FilePath) : IO FilePath := do
               "-t", "revealjs"] ++
             (← LeanSlides.pandocOptions.get) ++
             #[ mdFile.toString,
-              "-o", htmlFile.toString],
-    cwd := some "."
+              "-o", htmlFile.toString]
   }
   IO.println out
   return htmlFile
