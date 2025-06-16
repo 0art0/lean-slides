@@ -1,5 +1,7 @@
 import LeanSlides
 
+#set_pandoc_options "-V" "revealjs-url=https://unpkg.com/reveal.js@5.2.0"
+
 #slides Introduction /-!
 % Lean Slides
 % https://github.com/0art0/lean-slides/
