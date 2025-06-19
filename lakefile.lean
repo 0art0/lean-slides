@@ -34,10 +34,12 @@ script «serve-slides» do
   IO.println "Starting HTTP server for `Lean Slides` ..."
   let slidesDir ← slidesDir
   unless (← slidesDir.pathExists) do
+    IO.println s!"Creating slides directory at {slidesDir} ..."
     IO.FS.createDir slidesDir
+  IO.println s!"Serving slides ..."
   let _stdioCfg ← IO.Process.spawn {
     cmd := "browser-sync",
-    args := #[slidesDir.toString, "--port", ← getPort,
+    args := #["slides", "--port", ← getPort,
               "--watch", "--no-open"]
   }
   return 0
