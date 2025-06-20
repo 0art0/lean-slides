@@ -37,11 +37,17 @@ script «serve-slides» do
     IO.println s!"Creating slides directory at {slidesDir} ..."
     IO.FS.createDir slidesDir
   IO.println s!"Serving slides ..."
-  let _stdioCfg ← IO.Process.spawn {
-    cmd := "browser-sync",
-    args := #["slides", "--port", ← getPort,
-              "--watch", "--no-open"]
-  }
+  if System.Platform.isWindows then
+    let _stdioCfg ← IO.Process.spawn {
+      cmd := "cmd.exe",
+      args := #["/c", "browser-sync", "slides", "--port", "3000", "--watch", "--no-open"]
+    }
+  else
+    let _stdioCfg ← IO.Process.spawn {
+      cmd := "browser-sync",
+      args := #["slides", "--port", ← getPort,
+                "--watch", "--no-open"]
+    }
   return 0
 
 end Scripts
