@@ -32,7 +32,16 @@ may fix the issues in such cases.
 To use `Lean Slides`, first install all the dependencies listed above.
 
 `Lean Slides` can be added to an existing Lean repository
-by inserting the following line in the `lakefile`:
+by inserting the following lines in the `lakefile.toml` file:
+
+```toml
+[[require]]
+name = "lean-slides"
+git = "https://github.com/0art0/lean-slides.git"
+```
+
+If the repository uses a `lakefile.lean` instead, try:
+
 ```lean
 require «lean-slides» from git "https://github.com/0art0/lean-slides"@"master"
 ```
