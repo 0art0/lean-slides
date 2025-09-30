@@ -73,16 +73,17 @@ end Utils
 
 section Caching
 
-initialize slidesCache : IO.Ref (Std.HashMap (String × String) FilePath) ← IO.mkRef ∅
+initialize slidesCache : IO.Ref (Std.HashMap (String × String) String) ← IO.mkRef ∅
 
 def createSlidesFor (title : String) (content : String) : IO Unit := do
   let ref ← slidesCache.get
   match ref[(title, content)]? with
-    | some _ => pure ()
+    | some htmlFileContents =>
+      IO.FS.writeFile ((← slidesDir) / s!"{title}.html") htmlFileContents
     | none =>
       let mdFile ← createMarkdownFile title content
       let htmlFile ← runPandoc mdFile
-      slidesCache.set <| ref.insert (title, content) htmlFile
+      slidesCache.set <| ref.insert (title, content) (← IO.FS.readFile htmlFile)
 
 end Caching
 
