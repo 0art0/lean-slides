@@ -76,3 +76,32 @@ go in and out of draft mode.
 The generated `reveal.js` slides
 render mathematics by default
 using `KaTeX`.
+
+## Custom styling
+
+To enable custom CSS styling for the `reveal.js` presentation, insert a file named `style.css` in the `slides` folder (which is usually automatically generated in the home directory of your project by `Lean Slides`). A sample style sheet is shown below.
+
+```css
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4,
+.reveal h5,
+.reveal h6 {
+  text-transform: none;
+}
+
+.reveal code {
+  background-color: #5b5b5b;
+  padding: 0.1em 0.2em;
+  border-radius: 6px;
+}
+
+.reveal pre code {
+  background-color: #5b5b5b;
+  display: block;
+  padding: 1em;
+  border-radius: 6px;
+  overflow: auto;
+}
+```

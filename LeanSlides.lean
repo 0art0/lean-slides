@@ -54,12 +54,17 @@ def runPandoc (mdFile : FilePath) : IO FilePath := do
   let htmlFile : FilePath := slidesDir / (mdFile.fileStem.get! ++ ".html")
   unless ← slidesDir.pathExists do
     IO.FS.createDir slidesDir
+  let styleSheet ← do
+    if ← (slidesDir / "style.css").pathExists then
+      pure #["--css=" ++ (← getServerUrl) ++ "style.css"]
+    else pure #[]
   let out ← IO.Process.run {
     cmd := "pandoc",
     args := #["-s", "--katex",
               "-t", "revealjs"] ++
             (← LeanSlides.pandocOptions.get) ++
-            #[ mdFile.toString,
+            styleSheet ++
+            [ mdFile.toString,
               "-o", htmlFile.toString]
   }
   IO.println out
