@@ -38,10 +38,8 @@ script «serve-slides» do
     IO.FS.createDir slidesDir
   IO.println s!"Serving slides ..."
   if System.Platform.isWindows then
-    let _stdioCfg ← IO.Process.spawn {
-      cmd := "cmd.exe",
-      args := #["/c", "browser-sync", "slides", "--port", "3000", "--watch", "--no-open"]
-    }
+    IO.eprintln "This tool is not yet supported on Windows."
+    return 1
   else
     let _stdioCfg ← IO.Process.spawn {
       cmd := "browser-sync",
