@@ -25,12 +25,12 @@ def getServerUrl : IO String := do
 
 def System.FilePath.getRelativePath (filePath : FilePath) : String :=
   if filePath.isRelative then
-    filePath.normalize.toString.dropWhile (· ≠ FilePath.pathSeparator)
+    filePath.normalize.toString.dropWhile (· ≠ FilePath.pathSeparator) |>.toString
   else
     panic! s!"The file path {filePath} is not a relative path."
 
 def extractModuleDocContent : TSyntax ``moduleDoc → String
-  | ⟨.node _ _ #[_, .atom _ doc]⟩ => doc.dropRight 2
+  | ⟨.node _ _ #[_, .atom _ doc]⟩ => doc.dropEnd 2 |>.toString
   | _ => panic! "Ill-formed module docstring."
 
 def createMarkdownFile (title text : String) : IO FilePath := do
