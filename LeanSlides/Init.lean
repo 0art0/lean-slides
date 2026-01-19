@@ -1,4 +1,8 @@
-import Lean.Elab.Command
+module
+
+public meta import Lean.Elab.Command
+
+public meta section
 
 open Lean
 

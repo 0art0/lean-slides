@@ -1,5 +1,9 @@
-import ProofWidgets.Component.HtmlDisplay
-import LeanSlides.Init
+module
+
+public import ProofWidgets.Component.HtmlDisplay
+public import LeanSlides.Init
+
+public meta section
 
 open Lean ProofWidgets Elab Parser Command Server System
 
