@@ -13,7 +13,7 @@ lean_exe «lean-slides» {
   root := `LeanSlides
 }
 
-require "leanprover-community" / "proofwidgets" @ git "v0.0.84"
+require "leanprover-community" / "proofwidgets" @ git "v0.0.92"
 
 section Scripts
 
