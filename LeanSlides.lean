@@ -73,9 +73,8 @@ def runPandoc (mdFile : FilePath) : IO FilePath := do
   IO.println out
   return htmlFile
 
-open scoped ProofWidgets.Jsx in
 def iframeComponent (url : String) :=
-  <iframe src={url} width="100%" height="500px" frameBorder="0" />
+  jsx% {<iframe src={url} width="100%" height="500px" frameBorder="0" />}
 
 end Utils
 
