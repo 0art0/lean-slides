@@ -33,9 +33,11 @@ def System.FilePath.getRelativePath (filePath : FilePath) : String :=
   else
     panic! s!"The file path {filePath} is not a relative path."
 
-def extractModuleDocContent : TSyntax ``moduleDoc → String
-  | ⟨.node _ _ #[_, .atom _ doc]⟩ => doc.dropEnd 2 |>.toString
-  | _ => panic! "Ill-formed module docstring."
+def extractModuleDocContent {m} [Monad m] [MonadError m] : TSyntax ``moduleDoc → m String
+  | ⟨.node _ _ #[_, .node _ ``Lean.Parser.Command.commentBody #[.atom _ text, _]]⟩ => return text
+  | doc@⟨.node _ _ #[_, .node _ ``Lean.Parser.Command.versoCommentBody _]⟩ =>
+    throwErrorAt doc "`#slides` expects Markdown; disable `doc.verso` for this command"
+  | doc => throwErrorAt doc "unexpected module docstring{indentD doc}"
 
 def createMarkdownFile (title text : String) : IO FilePath := do
   let markdownDir ← markdownDir
@@ -101,7 +103,7 @@ syntax (name := slidesCmd) "#slides" ("+draft")? ident moduleDoc : command
 @[command_elab slidesCmd] def revealSlides : CommandElab
   | stx@`(command| #slides $title $doc) => do
     let name := title.getId.toString
-    let content := extractModuleDocContent doc
+    let content ← extractModuleDocContent doc
     createSlidesFor name content
     let slidesUrl := (← getServerUrl)  ++ s!"{name}.html"
     IO.println s!"Rendering results for {name} hosted at {slidesUrl} ..."
